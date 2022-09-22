@@ -1,8 +1,8 @@
 package models
 
 type Response struct {
-	page         int
-	limit        int
-	totalRecords int
+	Page         int
+	Limit        int
+	TotalRecords int64
 	YTRecords    []YTRecord
 }
