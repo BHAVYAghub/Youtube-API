@@ -1,4 +1,4 @@
-package mongoPaginate
+package driver
 
 import "go.mongodb.org/mongo-driver/mongo/options"
 
