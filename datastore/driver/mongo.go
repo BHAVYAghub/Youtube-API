@@ -79,7 +79,7 @@ func New(uri, dbName, collectionName string) *MongoDriver {
 //	return e, nil
 //}
 
-func (md MongoDriver) Get(limit, page int) (int64, []models.YTRecord, error) {
+func (md MongoDriver) GetAll(limit, page int) (int64, []models.YTRecord, error) {
 	result := make([]models.YTRecord, 0)
 	ctx := context.Background()
 
