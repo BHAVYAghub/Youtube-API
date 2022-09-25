@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/BHAVYAghub/Youtube-API/datastore"
 	log "github.com/BHAVYAghub/Youtube-API/logging"
-	datastore2 "github.com/BHAVYAghub/Youtube-API/models/datastore"
+	storeModel "github.com/BHAVYAghub/Youtube-API/models/datastore"
 	srvcModel "github.com/BHAVYAghub/Youtube-API/models/service"
 	"github.com/BHAVYAghub/Youtube-API/service/external"
 	"go.uber.org/zap"
@@ -87,22 +87,19 @@ func (yt YTService) FetchAndInsertRecords() error {
 
 	pageToken := ""
 
+	dbRecords := make([]storeModel.YTRecord, 0)
 	for true {
-		// TODO: refactor logs +
 		log.Info("Calling YoutubeSvc API", zap.String("PageToken", pageToken))
 		ytResponse, err := yt.ExternalSvc.GetVideoDetails(*t, pageToken)
 		if err != nil {
-			return err
+			break
 		}
 
 		log.Info("YoutubeSvc API successfully returned", zap.Any("ResponseBody", ytResponse))
 
-		dbRecords := transformYoutubeResponse(ytResponse)
-
-		log.Info("Saving records in db", zap.Any("Records", dbRecords))
-		err = yt.mongo.SaveAll(dbRecords)
-		if err != nil {
-			return err
+		dbData := transformYoutubeResponse(ytResponse)
+		for i := range dbData {
+			dbRecords = append(dbRecords, dbData[i])
 		}
 
 		pageToken = ytResponse.NextPageToken
@@ -111,14 +108,21 @@ func (yt YTService) FetchAndInsertRecords() error {
 		}
 	}
 
+	// saving records once fetched all pages.
+	log.Info("Saving records in db", zap.Any("Records", dbRecords))
+	err = yt.mongo.SaveAll(dbRecords)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func transformYoutubeResponse(response *srvcModel.YTResponse) []datastore2.YTRecord {
-	records := make([]datastore2.YTRecord, 0)
+func transformYoutubeResponse(response *srvcModel.YTResponse) []storeModel.YTRecord {
+	records := make([]storeModel.YTRecord, 0)
 
 	for _, item := range response.Items {
-		record := datastore2.YTRecord{}
+		record := storeModel.YTRecord{}
 		record.PublishedAt = item.Snippet.PublishedAt
 		record.VideoTitle = item.Snippet.Title
 		record.Description = item.Snippet.Desc
