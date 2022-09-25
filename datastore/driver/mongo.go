@@ -3,7 +3,7 @@ package driver
 import (
 	"context"
 	log "github.com/BHAVYAghub/Youtube-API/logging"
-	"github.com/BHAVYAghub/Youtube-API/models"
+	"github.com/BHAVYAghub/Youtube-API/models/datastore"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -52,6 +52,9 @@ func New(uri, dbName, collectionName string) *MongoDriver {
 			Keys: bsonx.Doc{{Key: "title", Value: bsonx.String("text")},
 				{Key: "desc", Value: bsonx.String("text")}},
 		},
+		{
+			Keys: bsonx.Doc{{Key: "publishedAt", Value: bsonx.Int32(-1)}},
+		},
 	}
 
 	_, err = col.Indexes().CreateMany(ctx, models, opts)
@@ -69,36 +72,30 @@ func New(uri, dbName, collectionName string) *MongoDriver {
 	}
 }
 
-//func (md MongoDriver) Create() (*entities.Engine, error) {
-//	_, err := es.DB.Exec("INSERT INTO engines VALUES (?,?,?,?)", e.ID, e.Displacement, e.Noc, e.Range)
-//
-//	if err != nil {
-//		return nil, &customerrors.Err{Msg: customerrors.EngineInsertionError}
-//	}
-//
-//	return e, nil
-//}
-
-func (md MongoDriver) GetAll(limit, page int) (int64, []models.YTRecord, error) {
-	result := make([]models.YTRecord, 0)
+func (md MongoDriver) GetAll(limit, page int) (int64, []datastore.YTRecord, error) {
+	result := make([]datastore.YTRecord, 0)
 	ctx := context.Background()
 
 	count, err := md.collection.CountDocuments(ctx, bson.D{})
 	if err != nil {
+		log.Error("Error while counting documents from db.", zap.Error(err))
 		return count, result, err
 	}
-
 	log.Info("Number of records returned", zap.Int64("Count", count))
 
-	curr, err := md.collection.Find(ctx, bson.D{}, NewMongoPaginate(limit, page).GetPaginatedOpts())
+	opts := NewMongoPaginate(limit, page).GetPaginatedOpts()
+	opts.SetSort(bson.D{{"publishedAt", -1}})
+
+	curr, err := md.collection.Find(ctx, bson.D{}, opts)
 	if err != nil {
+		log.Error("Error while finding documents from db.", zap.Error(err))
 		return count, result, err
 	}
 
 	for curr.Next(ctx) {
-		var record models.YTRecord
+		var record datastore.YTRecord
 		if err := curr.Decode(&record); err != nil {
-			log.Info("Failed while decoding response from db", zap.Error(err))
+			log.Error("Failed while decoding response from db", zap.Error(err))
 		}
 
 		result = append(result, record)
@@ -107,24 +104,29 @@ func (md MongoDriver) GetAll(limit, page int) (int64, []models.YTRecord, error) 
 	return count, result, nil
 }
 
-func (md MongoDriver) GetByTitleOrDesc(limit, page int, search string) (int64, []models.YTRecord, error) {
-	result := make([]models.YTRecord, 0)
+func (md MongoDriver) GetByTitleOrDesc(limit, page int, search string) (int64, []datastore.YTRecord, error) {
+	result := make([]datastore.YTRecord, 0)
 	ctx := context.Background()
 
 	count, err := md.collection.CountDocuments(ctx, bson.D{})
 	if err != nil {
+		log.Error("Error while counting documents from db.", zap.Error(err))
 		return count, result, err
 	}
-
 	log.Info("Number of records returned", zap.Int64("Count", count))
 
 	filter := bson.D{{"$text", bson.D{{"$search", search}}}}
-	curr, err := md.collection.Find(ctx, filter, NewMongoPaginate(limit, page).GetPaginatedOpts())
+	opts := NewMongoPaginate(limit, page).GetPaginatedOpts()
+	opts.SetSort(bson.D{{"publishedAt", -1}})
+
+	curr, err := md.collection.Find(ctx, filter, opts)
 	if err != nil {
+		log.Error("Error while finding documents from db.", zap.Error(err))
 		return count, result, err
 	}
+
 	for curr.Next(ctx) {
-		var record models.YTRecord
+		var record datastore.YTRecord
 		if err := curr.Decode(&record); err != nil {
 			log.Info(err.Error())
 		}
@@ -141,17 +143,19 @@ func (md MongoDriver) GetLastRecordTime() (*time.Time, error) {
 	options := options.Find()
 
 	// Sort by `_id` field descending
-	options.SetSort(bson.D{{"_id", -1}})
+	options.SetSort(bson.D{{"publishedAt", -1}})
 	options.SetLimit(1)
 
 	curr, err := md.collection.Find(ctx, bson.D{}, options)
 	if err != nil {
+		log.Error("Error while finding documents from db.", zap.Error(err))
 		return nil, err
 	}
+
 	var lastRecordTime *time.Time
 
 	for curr.Next(ctx) {
-		var record models.YTRecord
+		var record datastore.YTRecord
 		if err := curr.Decode(&record); err != nil {
 			log.Info(err.Error())
 		}
@@ -162,7 +166,7 @@ func (md MongoDriver) GetLastRecordTime() (*time.Time, error) {
 	return lastRecordTime, nil
 }
 
-func (md MongoDriver) SaveAll(records []models.YTRecord) error {
+func (md MongoDriver) SaveAll(records []datastore.YTRecord) error {
 	ctx := context.Background()
 
 	recordsToBeInserted := make([]interface{}, len(records))
@@ -172,6 +176,7 @@ func (md MongoDriver) SaveAll(records []models.YTRecord) error {
 
 	_, err := md.collection.InsertMany(ctx, recordsToBeInserted)
 	if err != nil {
+		log.Error("Error while inserting documents into db.", zap.Error(err))
 		return err
 	}
 
