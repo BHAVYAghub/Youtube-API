@@ -2,6 +2,12 @@ package main
 
 import (
 	"context"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/BHAVYAghub/Youtube-API/datastore"
 	"github.com/BHAVYAghub/Youtube-API/datastore/driver"
 	log "github.com/BHAVYAghub/Youtube-API/logging"
@@ -13,10 +19,6 @@ import (
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"os"
-	"strconv"
-	"sync"
-	"time"
 )
 
 var (
@@ -147,8 +149,10 @@ func initializeYTSvc(driver datastore.Database) service.Service {
 		log.Fatal("Invalid time passed in FETCH_RECORDS_AFTER config.")
 	}
 
+	keys := strings.Split(ytAPIKey, ",")
+
 	// Initializing YT client
-	ytClient := external.NewService(ytBaseUrl, ytQueryString, ytAPIKey)
+	ytClient := external.NewService(ytBaseUrl, ytQueryString, keys)
 
 	return service.NewYTService(ytClient, fetchRecordsAfterTime, driver)
 }

@@ -91,7 +91,7 @@ func (yt YTService) FetchAndInsertRecords() error {
 	dbRecords := make([]storeModel.YTRecord, 0)
 	for true {
 		log.Info("Calling YoutubeSvc API", zap.String("PageToken", pageToken))
-		ytResponse, err := yt.ExternalSvc.GetVideoDetails(*t, pageToken)
+		ytResponse, quotaExceeded, err := yt.ExternalSvc.GetVideoDetails(*t, pageToken)
 		if err != nil {
 			break
 		}
@@ -102,7 +102,7 @@ func (yt YTService) FetchAndInsertRecords() error {
 		}
 
 		pageToken = ytResponse.NextPageToken
-		if pageToken == "" {
+		if pageToken == "" && !quotaExceeded {
 			break
 		}
 	}
