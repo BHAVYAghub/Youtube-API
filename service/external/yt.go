@@ -2,12 +2,10 @@ package external
 
 import (
 	"encoding/json"
-	"fmt"
-	//log "github.com/BHAVYAghub/Youtube-API/logging"
+	log "github.com/BHAVYAghub/Youtube-API/logging"
 	"github.com/BHAVYAghub/Youtube-API/models/service"
 	"go.uber.org/zap"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -26,21 +24,21 @@ func NewService(baseURL, query, key string) *YoutubeSvc {
 	}
 }
 
-func (yt YoutubeSvc) GetVideoDetails(after time.Time, pageToken string) *service.YTResponse {
+func (yt YoutubeSvc) GetVideoDetails(after time.Time, pageToken string) (*service.YTResponse, error) {
 	client := &http.Client{}
 
 	url := yt.baseURL + "/search"
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		// TODO: some places it is fatal and some places it is error.
-		log.Println(err.Error())
+		log.Error("Error from YT API call. ", zap.Error(err))
+		return nil, err
 	}
 
-	// TODO: panic does not give reason and log
 	publishedAfter := after.UTC().Format(time.RFC3339)
 	if err != nil {
-		log.Fatal("Invalid time provided for fetching YT records.", zap.Error(err))
+		log.Error("Invalid time provided for fetching YT records.", zap.Error(err))
+		return nil, err
 	}
 
 	// set query params to be sent.
@@ -49,9 +47,7 @@ func (yt YoutubeSvc) GetVideoDetails(after time.Time, pageToken string) *service
 	q.Add("q", yt.query)
 	q.Add("key", yt.key)
 	q.Add("type", "video")
-	//q.Add("order", "date")
 	q.Add("publishedAfter", publishedAfter)
-
 	if pageToken != "" {
 		q.Add("pageToken", pageToken)
 	}
@@ -59,23 +55,23 @@ func (yt YoutubeSvc) GetVideoDetails(after time.Time, pageToken string) *service
 	req.URL.RawQuery = q.Encode()
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Errored when sending request to the server")
-		return nil
+		log.Error("Error from YT API call. ", zap.Error(err))
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Failed while reading response from youtube", zap.Error(err))
-		return nil
+		log.Error("Failed while reading response from youtube", zap.Error(err))
+		return nil, err
 	}
 
 	var response service.YTResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		log.Println("Failed while unmarshalling youtube response", zap.Error(err))
-		return nil
+		log.Error("Failed while unmarshalling youtube response", zap.Error(err))
+		return nil, err
 	}
 
-	return &response
+	return &response, nil
 }
