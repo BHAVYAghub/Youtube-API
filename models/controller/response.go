@@ -1,8 +1,20 @@
-package models
+package controller
+
+import (
+	models "github.com/BHAVYAghub/Youtube-API/models/datastore"
+)
 
 type Response struct {
-	Page         int        `json:"page"`
-	Limit        int        `json:"limit"`
-	TotalRecords int64      `json:"totalRecords"`
-	YTRecords    []YTRecord `json:"records"`
+	PageDetails PageDetails       `json:"pageDetails"`
+	YTRecords   []models.YTRecord `json:"records,omitempty"`
+}
+
+type PageDetails struct {
+	Page         int   `json:"page,omitempty"`
+	Limit        int   `json:"limit,omitempty"`
+	TotalRecords int64 `json:"totalRecords,omitempty"`
+}
+
+type ErrorResponse struct {
+	ErrorMessage string `json:"errorMessage,omitempty"`
 }
