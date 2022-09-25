@@ -7,6 +7,7 @@ import (
 	srvcModel "github.com/BHAVYAghub/Youtube-API/models/service"
 	"github.com/BHAVYAghub/Youtube-API/service/external"
 	"go.uber.org/zap"
+
 	"net/http"
 	"time"
 )
@@ -25,19 +26,19 @@ func NewYTService(externalSvc external.YouTube, firstRecordStartTime time.Time, 
 	}
 }
 
-func (yt YTService) GetData(limit, page int) (*srvcModel.GetResponse, *srvcModel.ServiceError) {
+func (yt YTService) GetData(limit, page int) (*srvcModel.GetResponse, *srvcModel.SvcError) {
 	count, records, err := yt.mongo.GetAll(limit, page)
 	if err != nil {
-		log.Error("Failed while fetching records for GetAll", zap.Error(err))
-		return nil, &srvcModel.ServiceError{
+		return nil, &srvcModel.SvcError{
 			Message:      err.Error(),
 			ResponseCode: http.StatusInternalServerError,
 		}
 	}
 
-	if records == nil || count == 0 {
-		return nil, &srvcModel.ServiceError{
-			Message:      "Empty records",
+	if len(records) == 0 || count == 0 {
+		log.Error("No Record Found.")
+		return nil, &srvcModel.SvcError{
+			Message:      "No records found",
 			ResponseCode: http.StatusNotFound,
 		}
 	}
@@ -48,19 +49,19 @@ func (yt YTService) GetData(limit, page int) (*srvcModel.GetResponse, *srvcModel
 	}, nil
 }
 
-func (yt YTService) GetSearchResult(limit, page int, searchString string) (*srvcModel.GetResponse, *srvcModel.ServiceError) {
+func (yt YTService) GetSearchResult(limit, page int, searchString string) (*srvcModel.GetResponse, *srvcModel.SvcError) {
 	count, records, err := yt.mongo.GetByTitleOrDesc(limit, page, searchString)
 	if err != nil {
-		log.Error("Failed while fetching records for GetByTitleOrDesc", zap.Error(err))
-		return nil, &srvcModel.ServiceError{
+		return nil, &srvcModel.SvcError{
 			Message:      err.Error(),
 			ResponseCode: http.StatusInternalServerError,
 		}
 	}
 
 	if records == nil || count == 0 {
-		return nil, &srvcModel.ServiceError{
-			Message:      "Empty records",
+		log.Error("No Record Found.")
+		return nil, &srvcModel.SvcError{
+			Message:      "No records found",
 			ResponseCode: http.StatusNotFound,
 		}
 	}
@@ -78,29 +79,33 @@ func (yt YTService) FetchAndInsertRecords() error {
 	}
 
 	if t == nil {
-		log.Info("Fetching first record")
+		log.Info("Fetching first record", zap.String("time", yt.firstRecordStartTime.String()))
 		t = &yt.firstRecordStartTime
+	} else {
+		log.Info("Fetching records After ", zap.String("time", t.String()))
 	}
 
 	pageToken := ""
 
 	for true {
 		// TODO: refactor logs +
-		log.Info("Calling YoutubeSvc API for pageToken: " + pageToken)
-		ytResponse := yt.ExternalSvc.GetVideoDetails(*t, pageToken)
+		log.Info("Calling YoutubeSvc API", zap.String("PageToken", pageToken))
+		ytResponse, err := yt.ExternalSvc.GetVideoDetails(*t, pageToken)
+		if err != nil {
+			return err
+		}
 
 		log.Info("YoutubeSvc API successfully returned", zap.Any("ResponseBody", ytResponse))
 
 		dbRecords := transformYoutubeResponse(ytResponse)
-		log.Info("Saving record in db", zap.Any("Record", dbRecords))
 
+		log.Info("Saving records in db", zap.Any("Records", dbRecords))
 		err = yt.mongo.SaveAll(dbRecords)
 		if err != nil {
 			return err
 		}
 
 		pageToken = ytResponse.NextPageToken
-
 		if pageToken == "" {
 			break
 		}
