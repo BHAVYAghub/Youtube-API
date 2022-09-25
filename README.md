@@ -17,6 +17,7 @@ A Golang application which shows Youtube videos data of any search query. Databa
 * Cron scheduler has been configured to run periodically and fetch the data from Youtube and stored in mongoDB. 
 * GET endpoints have been configured to fetch data from database and display results in paginated format sorted by video published time.
 * Fuzzy search support has been added by adding text index on video title and description.
+* Multiple API keys support is provided. Config accepts commma separated api keys.
 
 ---
 ### Steps to run the application:
@@ -40,18 +41,18 @@ Note:
 The following configs are to be set in .env file.<br/>
 See .env file for example values.
 
-| Name                    | Description                                                                                   |
-|-------------------------|-----------------------------------------------------------------------------------------------|
-| MONGODB_URI             | Describes the mongoDB connection URI.                                                         |  
-| MONGODB_COLLECTION_NAME | Describes the mongoDB connection name.                                                        |
-| MONGODB_DATABASE_NAME   | Describes the mongoDB database name.                                                          |
-| YT_API_KEY              | Describes the API-key to be used for calling YT endpoints.                                    |
-| YT_QUERY_STRING         | Describes the query string to be used to fetch YT records and save in DB.                     |
-| YT_API_BASE_URL         | Describes the YT Api Base URL.                                                                |
-| YT_FETCH_RECORDS_AFTER  | Describes the time after which the YT records are to be fetched and saved.                    |
-| YT_API_FETCH_INTERVAL   | Describes the interval to call the scheduler to fetch youtube records in minutes. (default 1) |
-| PORT                    | Describes the port on which application will run.                                             |
-| DISABLE_CRON            | kill switch to disable the youTube data fetching scheduler. (default false)                   |
+| Name                    | Description                                                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| MONGODB_URI             | Describes the mongoDB connection URI.                                                                                               |  
+| MONGODB_COLLECTION_NAME | Describes the mongoDB connection name.                                                                                              |
+| MONGODB_DATABASE_NAME   | Describes the mongoDB database name.                                                                                                |
+| YT_API_KEY              | Describes the API-keys to be used for calling YT endpoints. comma separated API keys. (next key will be used when one is exhausted) |
+| YT_QUERY_STRING         | Describes the query string to be used to fetch YT records and save in DB.                                                           |
+| YT_API_BASE_URL         | Describes the YT Api Base URL.                                                                                                      |
+| YT_FETCH_RECORDS_AFTER  | Describes the time after which the YT records are to be fetched and saved.                                                          |
+| YT_API_FETCH_INTERVAL   | Describes the interval to call the scheduler to fetch youtube records in minutes. (default 1)                                       |
+| PORT                    | Describes the port on which application will run.                                                                                   |
+| DISABLE_CRON            | kill switch to disable the youTube data fetching scheduler. (default false)                                                         |
 
 
 ---
@@ -72,6 +73,7 @@ See .env file for example values.
 Note: 
 * Carefully set the `YT_FETCH_RECORDS_AFTER` config as this might exhaust your quota.
 * Set the configs before running the application.
+* Api keys are considered as secret. For security purposes, API keys have not been logged anywhere.
 
 
 
