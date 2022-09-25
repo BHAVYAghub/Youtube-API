@@ -9,7 +9,7 @@ type GetResponse struct {
 	Record []models.YTRecord
 }
 
-type ServiceError struct {
+type SvcError struct {
 	Message      string
 	ResponseCode int
 }
