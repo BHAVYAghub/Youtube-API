@@ -14,7 +14,9 @@ A Golang application which shows Youtube videos data of any search query. Databa
   * MongoDB and Application have been containerized in docker-compose file.
 ---
 ### Approach used:
-* 
+* Cron scheduler has been configured to run periodically and fetch the data from Youtube and stored in mongoDB. 
+* GET endpoints have been configured to fetch data from database and display results in paginated format sorted by video published time.
+* Fuzzy search support has been added by adding text index on video title and description.
 
 ---
 ### Steps to run the application:
@@ -67,7 +69,10 @@ See .env file for example values.
 | GET    | /youtube/find    | Fetches the youtube records saved in DB, sorted in reverse chronological order of their publishing date-time on the basis of `search` query param (fuzzy serach). |
 
 ---
-Note: Carefully set the `YT_FETCH_RECORDS_AFTER` config as this might exhaust your quota.
+Note: 
+* Carefully set the `YT_FETCH_RECORDS_AFTER` config as this might exhaust your quota.
+* Set the configs before running the application.
+
 
 
  
