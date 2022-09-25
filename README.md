@@ -18,6 +18,7 @@ A Golang application which shows Youtube videos data of any search query. Databa
 
 ---
 ### Steps to run the application:
+* Set configs in .env file.
 ###### With Docker:
 * Just run this command `docker compose up --build`
 ###### Without Docker:
