@@ -1,13 +1,15 @@
 package external
 
 import (
-	"encoding/json"
 	log "github.com/BHAVYAghub/Youtube-API/logging"
 	"github.com/BHAVYAghub/Youtube-API/models/service"
-	"go.uber.org/zap"
+
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type YoutubeSvc struct {

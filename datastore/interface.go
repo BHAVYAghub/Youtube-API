@@ -1,8 +1,9 @@
 package datastore
 
 import (
-	"github.com/BHAVYAghub/Youtube-API/models/datastore"
 	"time"
+
+	"github.com/BHAVYAghub/Youtube-API/models/datastore"
 )
 
 type Database interface {

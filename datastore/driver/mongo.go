@@ -108,14 +108,15 @@ func (md MongoDriver) GetByTitleOrDesc(limit, page int, search string) (int64, [
 	result := make([]datastore.YTRecord, 0)
 	ctx := context.Background()
 
-	count, err := md.collection.CountDocuments(ctx, bson.D{})
+	filter := bson.D{{"$text", bson.D{{"$search", search}}}}
+
+	count, err := md.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		log.Error("Error while counting documents from db.", zap.Error(err))
 		return count, result, err
 	}
 	log.Info("Number of records returned", zap.Int64("Count", count))
 
-	filter := bson.D{{"$text", bson.D{{"$search", search}}}}
 	opts := NewMongoPaginate(limit, page).GetPaginatedOpts()
 	opts.SetSort(bson.D{{"publishedAt", -1}})
 

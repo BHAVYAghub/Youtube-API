@@ -6,10 +6,11 @@ import (
 	storeModel "github.com/BHAVYAghub/Youtube-API/models/datastore"
 	srvcModel "github.com/BHAVYAghub/Youtube-API/models/service"
 	"github.com/BHAVYAghub/Youtube-API/service/external"
-	"go.uber.org/zap"
 
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type YTService struct {
@@ -95,8 +96,6 @@ func (yt YTService) FetchAndInsertRecords() error {
 			break
 		}
 
-		log.Info("YoutubeSvc API successfully returned", zap.Any("ResponseBody", ytResponse))
-
 		dbData := transformYoutubeResponse(ytResponse)
 		for i := range dbData {
 			dbRecords = append(dbRecords, dbData[i])
@@ -109,7 +108,6 @@ func (yt YTService) FetchAndInsertRecords() error {
 	}
 
 	// saving records once fetched all pages.
-	log.Info("Saving records in db", zap.Any("Records", dbRecords))
 	err = yt.mongo.SaveAll(dbRecords)
 	if err != nil {
 		return err
