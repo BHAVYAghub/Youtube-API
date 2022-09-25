@@ -2,19 +2,23 @@ package routes
 
 import (
 	"github.com/BHAVYAghub/Youtube-API/controller"
+	"github.com/BHAVYAghub/Youtube-API/service"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	GET    = "get"
-	SEARCH = "search"
+	GET    = "findAll"
+	SEARCH = "find"
 )
 
-func AttachRoutes(r *gin.Engine) {
-	ctrl := controller.New()
-	r.Group("/")
+// TODO: Add constants
+
+func AttachRoutes(r *gin.Engine, ytsrvc service.Service) {
+	ctrl := controller.New(ytsrvc)
+
+	api := r.Group("/youtube/")
 	{
-		r.GET(GET, ctrl.GetData)
-		r.GET(SEARCH, ctrl.GetData)
+		api.GET(GET, ctrl.GetData)
+		api.GET(SEARCH, ctrl.GetSearchData)
 	}
 }

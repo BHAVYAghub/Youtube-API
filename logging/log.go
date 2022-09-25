@@ -54,6 +54,11 @@ func InitClient(logLevel string, logPath string) {
 	log.Info("Logging Initialized.", zap.Strings("destination", cfg.OutputPaths))
 }
 
+// Warn provides a helper method to log error messages using zap
+func Warn(msg string, fields ...zapcore.Field) {
+	log.Warn(msg, fields...)
+}
+
 // Error provides a helper method to log error messages using zap
 func Error(msg string, fields ...zapcore.Field) {
 	log.Error(msg, fields...)
